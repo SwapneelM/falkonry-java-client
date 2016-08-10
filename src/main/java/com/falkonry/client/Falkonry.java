@@ -9,6 +9,7 @@ package com.falkonry.client;
 import com.falkonry.client.service.FalkonryService;
 import com.falkonry.helper.models.*;
 
+import javax.security.auth.callback.Callback;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -72,8 +73,8 @@ public class Falkonry {
     return this.falkonryService.getOutput(pipeline, start, end);
   }
 
-  public String streamOutput(String pipeline, Long start) throws Exception {
-    return this.falkonryService.streamOutput(pipeline, start);
+  public Object streamOutput(String pipeline, Long start, Class obj) throws Exception {
+    return this.falkonryService.streamOutput(pipeline, start, obj);
   }
 
   public Subscription createSubscription(String eventbuffer, Subscription subscription) throws Exception {

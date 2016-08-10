@@ -7,6 +7,7 @@ package com.falkonry.client.service;
  */
 
 import com.falkonry.helper.models.*;
+import com.sun.java.util.jar.pack.Package;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import javafx.beans.*;
 import org.apache.commons.io.IOUtils;
@@ -23,6 +24,10 @@ import java.util.Observable;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 import org.json.JSONObject;
+import sun.plugin2.gluegen.runtime.BufferFactory;
+import javax.security.auth.*;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.TextOutputCallback;
 
 public class FalkonryService {
   private HttpService httpService;
@@ -168,35 +173,51 @@ public class FalkonryService {
     return this.httpService.downstream(url);
   }
 
-  /*private class StreamingThread extends Observable implements Runnable {
+  /*interface Outflow {
+    public String getResult (String result);
+  }*/
+
+  private class StreamingThread implements Runnable {
+
     String pipeline = "";
     Long start = 0l;
+    BufferedReader data;
     Boolean awaitingResponse = false;
-    private StreamingThread (String pipeline, Long start) throws Exception {
-      pipeline = this.pipeline;
-      start = this.start;
+    Boolean dataUpdated = false;
+    javafx.util.Callback callback;
+
+    private StreamingThread (String pipeline, Long start, javafx.util.Callback myCallback) throws Exception {
+      this.pipeline = pipeline;
+      this.start = start;
+      this.callback = myCallback;
     }
     public void run() {
-      BufferedReader data = null;
-      if (!awaitingResponse) {
-        data = outflowData(pipeline);
-      }
-      if (data != null) {
-        setChanged();
-        notifyObservers(data);
+      try {
+        while (true) {
+          if (!awaitingResponse) {
+            data = null;
+            awaitingResponse = true;
+            data = outflowData(pipeline);
+          }
+          if (data != null) {
+            callback.call(data.toString());
+          }
+          Thread.sleep(3000);
+        }
+      } catch (Exception e) {
+          System.out.println("Exception : " + e);
       }
     }
+
     private BufferedReader outflowData (String pipeline) {
-      //BufferedReader pipelineOutflowData = null;
       try {
         if(pipelineOpen()) {
           System.out.println("Start : " + start);
           String url = "/pipeline/" + pipeline + "/output?startTime=" + start;
-          //pipelineOutflowData =
+          awaitingResponse = false;
           return httpService.downstream(url);
-        }
-        else {
-          return null;
+        } else {
+          awaitingResponse = false;
         }
       } catch (Exception e) {
         System.out.println("Error : " + e);
@@ -207,102 +228,43 @@ public class FalkonryService {
     private boolean pipelineOpen() throws Exception {
       String url = "/Pipeline/" + pipeline;
       String pipeline_json = httpService.get("/pipeline");
-      //JSONPObject pipeline_jsonpobject = new JSONPObject(, pipeline_json);
-      //ObjectMapper mapper = new ObjectMapper();
-      //if(mapper.readValue(pipeline_json, Object[].class) == "CLOSED") {}
+
       JSONObject outflowStatus = new JSONObject(pipeline_json);
       return (outflowStatus.get("outflowStatus") == "OPEN");
     }
+
+    public void closeThread (Thread t){
+      t.stop();
+    }
+
   }
 
-  private class StreamObserver implements Observer {
-    private String outflowData = "";
+  class Initiator {
+    StreamingThread streamer;
+    Thread streamingThread;
 
-    @Override
-    public void update(Observable o, Object arg) {
-      //System.out.println("Data received  : " + arg);
-      outflowData = arg.toString();
-    }
-    public String getData () {
-      return  outflowData;
-    }
-  }
-
-  public Observable streamOutput(String pipeline, Long start) {
-    String data;
-    //StreamObserver outflowObserver = new StreamObserver();
-    try {
-      //StreamingThread streamingThread = new StreamingThread(pipeline, start);
-      //streamingThread.addObserver(outflowObserver);
-      return (new StreamingThread(pipeline, start));
-    } catch (Exception e) {
-      System.out.println("Error instantiating streamingThread : " + e);
-    }
-    return null;
-  }
-
-  private class StreamingThread {     // implements Runnable {
-    ScheduledExecutorService scheduledExecutorService =
-            Executors.newScheduledThreadPool(3);
-    ScheduledFuture scheduledFuture =
-            scheduledExecutorService.schedule(new Callable() {
-              public Object call() throws Exception {
-                System.out.println("Executed!");
-                return "Called!";
-              }
-            }, 5, TimeUnit.SECONDS);
-
-    String pipeline = "";
-    Long start = 0l;
-    Boolean awaitingResponse = false;
-    private StreamingThread (String pipeline, Long start) throws Exception {
-      pipeline = this.pipeline;
-      start = this.start;
-    }
-    public void run() {
-      BufferedReader data = null;
-      if (!awaitingResponse) {
-        data = outflowData(pipeline);
-      }
-      if (data != null) {
-        //setChanged();
-        //notifyObservers(data);
-      }
-    }
-    private BufferedReader outflowData (String pipeline) {
-      //BufferedReader pipelineOutflowData = null;
+    public Initiator (String pipeline, Long start, javafx.util.Callback callback) {
       try {
-        if(pipelineOpen()) {
-          System.out.println("Start : " + start);
-          String url = "/pipeline/" + pipeline + "/output?startTime=" + start;
-          //pipelineOutflowData =
-          return httpService.downstream(url);
-        }
-        else {
-          return null;
-        }
+        streamer = new StreamingThread(pipeline, start, callback);
+        streamingThread = new Thread(streamer);
       } catch (Exception e) {
-        System.out.println("Error : " + e);
+        System.out.println("Exception creating thread : " + e);
       }
-      return null;
     }
 
-    private boolean pipelineOpen() throws Exception {
-      String url = "/Pipeline/" + pipeline;
-      String pipeline_json = httpService.get("/pipeline");
-      //JSONPObject pipeline_jsonpobject = new JSONPObject(, pipeline_json);
-      //ObjectMapper mapper = new ObjectMapper();
-      //if(mapper.readValue(pipeline_json, Object[].class) == "CLOSED") {}
-      JSONObject outflowStatus = new JSONObject(pipeline_json);
-      return (outflowStatus.get("outflowStatus") == "OPEN");
+    public Thread startThread (Thread t) {
+      t.start();
+      return t;
+    }
+
+    public void closeThread (Thread t) {
+      t.stop();
     }
   }
-*/
 
-
-
-  public Object streamOutput(String pipeline, Long start) {
+  public Object streamOutput(String pipeline, Long start, Class callback) {
     String data;
+    Boolean streaming = true;
       try {
 
       } catch (Exception e) {
