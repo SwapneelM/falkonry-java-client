@@ -7,9 +7,12 @@ package com.falkonry.client.service;
  */
 
 import com.falkonry.helper.models.*;
+import javafx.util.Callback;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -162,6 +165,118 @@ public class FalkonryService {
         url += "startTime="+start;
     }
     return this.httpService.downstream(url);
+  }
+
+
+  private class StreamingThread implements Runnable {
+
+    String pipeline = "";
+    Long start = 0l;
+    BufferedReader data;
+    Boolean awaitingResponse = false;
+    Boolean dataUpdated = false;
+    Callback callback;
+
+    private StreamingThread (String pipeline, Long start, Callback myCallback) throws Exception {
+      this.pipeline = pipeline;
+      this.start = start;
+      this.callback = myCallback;
+    }
+    public void run() {
+      try {
+        while (true) {
+          if (!awaitingResponse) {
+            System.out.println("Checking for new data . . . ");
+            data = null;
+            awaitingResponse = true;
+            data = outflowData(pipeline);
+          }
+          if (data != null) {
+            System.out.println("Found new data");
+            String line = null;
+            String message = new String();
+            final StringBuffer buffer = new StringBuffer(2048);
+            while ((line = data.readLine()) != null) {
+              //buffer.append(line);
+              message += line;
+            }
+            System.out.println("Data : " + data);
+            callback.call(message);
+          }
+          Thread.sleep(4000);
+        }
+      } catch (Exception e) {
+        System.out.println("Exception : " + e);
+      }
+    }
+
+    private BufferedReader outflowData (String pipeline) {
+      try {
+        System.out.println("Checking if pipeline is open . . . ");
+        if(pipelineOpen()) {
+          System.out.println("Pipeline is open - Start : " + start);
+          String url = "/pipeline/" + pipeline + "/output?startTime=" + start;
+          awaitingResponse = false;
+          return httpService.downstream(url);
+        } else {
+          System.out.println("Pipeline not open");
+          awaitingResponse = false;
+        }
+      } catch (Exception e) {
+        System.out.println("Error : " + e);
+      }
+      return null;
+    }
+
+    private boolean pipelineOpen() throws Exception {
+      String url = "/pipeline/" + pipeline;
+      String pipeline_json = httpService.get(url);
+      JSONObject outflowStatus = new JSONObject(pipeline_json);
+      System.out.println("Pipeline details : " + pipeline_json + "\n"
+              + "Outflow Status : " + outflowStatus.get("outflowStatus"));
+      return (outflowStatus.get("outflowStatus").equals("OPEN"));
+    }
+
+    public void closeThread (Thread t){
+      t.stop();
+    }
+
+  }
+
+  private class Initiator {
+    StreamingThread streamer;
+    Thread streamingThread;
+
+    private Initiator (String pipeline, Long start, Callback callback) {
+      try {
+        streamer = new StreamingThread(pipeline, start, callback);
+        streamingThread = new Thread(streamer);
+      } catch (Exception e) {
+        System.out.println("Exception creating thread : " + e);
+      }
+    }
+
+    private Thread startThread () {
+      streamingThread.start();
+      return streamingThread;
+    }
+
+    private void closeThread (Thread t) {
+      t.stop();
+    }
+  }
+
+  public Object streamOutput(String pipeline, Long start, Callback callback) {
+    String data;
+    Boolean streaming = true;
+    try {
+      Initiator initiator = new Initiator(pipeline, start, callback);
+      Thread t = initiator.startThread();
+      Thread.sleep(15000);
+    } catch (Exception e) {
+      System.out.println("Error instantiating streamingThread : " + e);
+    }
+    return null;
   }
 
   public Subscription createSubscription(String eventbuffer, Subscription subscription) throws Exception {
