@@ -26,7 +26,7 @@ public class Falkonry {
 
   public Eventbuffer createEventbuffer(Eventbuffer eventbuffer) throws Exception {
     return falkonryService.createEventbuffer(eventbuffer);
-}
+  }
 
   public List<Eventbuffer> getEventbuffers() throws Exception {
     return falkonryService.getEventbuffers();

@@ -284,7 +284,7 @@ public class HttpService {
     int responseCode = con.getResponseCode();
     BufferedReader in = new BufferedReader(
         new InputStreamReader(con.getInputStream()));
-    System.out.println("Downstream Connection : " + con.getInputStream());
+
     if(responseCode == 401)
       throw new Exception("Unauthorized : Invalid token");
     else if(responseCode >= 400) {

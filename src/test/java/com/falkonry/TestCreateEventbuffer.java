@@ -210,6 +210,11 @@ public class TestCreateEventbuffer {
 
     Eventbuffer eventbuffer = falkonry.createEventbuffer(eb);
 
+    String data = "time,thing,signal1,signal2,signal3,signal4,signal5\n" +
+            "1467729675422,thing1,41.11,82.34,74.63,4.8,72.01";
+    Map<String, String> options = new HashMap<String, String>();
+    falkonry.addInput(eventbuffer.getId(), data, options);
+
     eventbuffers.add(eventbuffer);
     Assert.assertEquals(1, eventbuffer.getSubscriptionList().size());
 
@@ -249,7 +254,13 @@ public class TestCreateEventbuffer {
             .setPath("urn:falkonry:pipeline:zmusfprsf7zspf");
 
     Eventbuffer eventbuffer = falkonry.createEventbuffer(eb);
+    String data = "time,thing,signal1,signal2,signal3,signal4,signal5\n"
+            + "1467729675422,thing1,41.11,82.34,74.63,4.8,72.01";
+    Map<String, String> options = new HashMap<String, String>();
+    falkonry.addInput(eventbuffer.getId(), data, options);
+
     eventbuffers.add(eventbuffer);
+
     Assert.assertEquals(1, eventbuffer.getSubscriptionList().size());
 
     Subscription subscription = falkonry.createSubscription(eventbuffer.getId(), sub);
@@ -288,6 +299,11 @@ public class TestCreateEventbuffer {
             .setPassword("test");
 
     Eventbuffer eventbuffer = falkonry.createEventbuffer(eb);
+    String data = "time,thing,signal1,signal2,signal3,signal4,signal5\n" +
+            "1467729675422,thing1,41.11,82.34,74.63,4.8,72.01";
+    Map<String, String> options = new HashMap<String, String>();
+    falkonry.addInput(eventbuffer.getId(), data, options);
+
     eventbuffers.add(eventbuffer);
     Assert.assertEquals(1, eventbuffer.getSubscriptionList().size());
 
