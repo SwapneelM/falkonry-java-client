@@ -19,8 +19,8 @@ import java.util.Observer;
 
 public class TestStreamOutput {
   Falkonry falkonry = null;
-  String host = "https://dev.falkonry.io";
-  String token = "dg5th0r2rj4rywg3rv90egu3krswpw50";
+  String host = "http://localhost:8080";
+  String token = "";    //auth token
   String pipeline = "auvkkw8boml4l2";
 
   public class OutflowCallback implements javafx.util.Callback<String, String> {
