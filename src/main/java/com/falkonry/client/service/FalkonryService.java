@@ -174,17 +174,23 @@ public class FalkonryService {
     Long start = 0l;
     BufferedReader data;
     Boolean awaitingResponse = false;
-    Boolean dataUpdated = false;
+    Thread blinker;
     Callback callback;
+    Boolean threadSuspended;
+    Thread thisThread;
 
     private StreamingThread (String pipeline, Long start, Callback myCallback) throws Exception {
       this.pipeline = pipeline;
       this.start = start;
       this.callback = myCallback;
+      this.threadSuspended = false;
     }
+
     public void run() {
       try {
-        while (true) {
+        thisThread = Thread.currentThread();
+        System.out.println();
+        while (blinker == thisThread) {
           if (!awaitingResponse) {
             System.out.println("Checking for new data . . . ");
             data = null;
@@ -197,17 +203,38 @@ public class FalkonryService {
             String message = new String();
             final StringBuffer buffer = new StringBuffer(2048);
             while ((line = data.readLine()) != null) {
-              //buffer.append(line);
               message += line;
             }
             System.out.println("Data : " + data);
             callback.call(message);
           }
-          Thread.sleep(4000);
+          try {
+            Thread.sleep(4000);
+            synchronized (this) {
+              while (threadSuspended && blinker == thisThread)
+                wait();
+            }
+          } catch (InterruptedException e) {
+
+          }
         }
       } catch (Exception e) {
         System.out.println("Exception : " + e);
       }
+    }
+
+    private void setBlinker (Thread t) {
+      blinker = t;
+      System.out.println("Blinker updated to : " + blinker);
+    }
+
+    public synchronized void suspendThread () {
+      threadSuspended = !threadSuspended;
+    }
+
+    public synchronized void closeThread() {
+      blinker = null;
+      notify();
     }
 
     private BufferedReader outflowData (String pipeline) {
@@ -228,55 +255,79 @@ public class FalkonryService {
       return null;
     }
 
-    private boolean pipelineOpen() throws Exception {
-      String url = "/pipeline/" + pipeline;
-      String pipeline_json = httpService.get(url);
+    private boolean pipelineOpen() {
+      String pipeline_json = "";
+      try {
+        pipeline_json = getPipeline();
+      } catch (Exception e) {
+        System.out.println("Error : " + e);
+      }
       JSONObject outflowStatus = new JSONObject(pipeline_json);
       System.out.println("Pipeline details : " + pipeline_json + "\n"
               + "Outflow Status : " + outflowStatus.get("outflowStatus"));
       return (outflowStatus.get("outflowStatus").equals("OPEN"));
     }
 
-    public void closeThread (Thread t){
-      t.stop();
+    private String getPipeline() throws Exception {
+      String url = "/pipeline/" + pipeline;
+      return httpService.get(url);
     }
-
   }
 
-  private class Initiator {
+  private class Initiator implements Callback<String, String> {
     StreamingThread streamer;
-    Thread streamingThread;
+    Thread streamingThread = null;
 
     private Initiator (String pipeline, Long start, Callback callback) {
       try {
-        streamer = new StreamingThread(pipeline, start, callback);
-        streamingThread = new Thread(streamer);
+        if(streamingThread == null) {
+          streamer = new StreamingThread(pipeline, start, callback);
+          streamingThread = new Thread(streamer);
+          streamer.setBlinker(streamingThread);
+        } else {
+          streamingThread.interrupt();
+        }
       } catch (Exception e) {
         System.out.println("Exception creating thread : " + e);
       }
     }
 
-    private Thread startThread () {
-      streamingThread.start();
-      return streamingThread;
+    public synchronized String call (String tag) {
+      if (tag.equals("resume")) {
+        streamer.suspendThread();
+        return "Resumed Thread";
+      } else if (tag.equals("pause")) {
+        streamer.suspendThread();
+        return "Paused Thread";
+      } else if (streamingThread.isAlive() && tag.equals("close")) {
+        streamer.closeThread();
+      }
+      return "Invalid Operation. Use 'resume', 'pause' or 'close' for the Thread.";
     }
 
-    private void closeThread (Thread t) {
-      t.stop();
+    private Thread startThread () {
+      try {
+        streamingThread.start();
+      } catch(Exception e) {
+        System.out.println ("Exception : Thread started");
+      }
+      return streamingThread;
     }
   }
 
-  public Object streamOutput(String pipeline, Long start, Callback callback) {
+  public Callback<String, String> streamOutput(String pipeline, Long start, Callback callback) {
     String data;
     Boolean streaming = true;
+    Initiator initiator = null;
     try {
-      Initiator initiator = new Initiator(pipeline, start, callback);
+      initiator = new Initiator(pipeline, start, callback);
       Thread t = initiator.startThread();
-      Thread.sleep(15000);
+      Thread.sleep(12000);
+      t.interrupt();
     } catch (Exception e) {
       System.out.println("Error instantiating streamingThread : " + e);
     }
-    return null;
+    return initiator;
   }
 
   public Subscription createSubscription(String eventbuffer, Subscription subscription) throws Exception {

@@ -72,9 +72,13 @@ public class Falkonry {
     return this.falkonryService.getOutput(pipeline, start, end);
   }
 
-  public Object streamOutput(String pipeline, Long start, Callback obj) throws Exception {
+  public Callback streamOutput(String pipeline, Long start, Callback obj) throws Exception {
     return this.falkonryService.streamOutput(pipeline, start, obj);
   }
+
+  /*public void haltStreamOutput(String pipeline, Long start, Callback obj) throws Exception {
+    this.falkonryService.haltStreamOutput(pipeline, start, obj);
+  }*/
 
   public Subscription createSubscription(String eventbuffer, Subscription subscription) throws Exception {
     return falkonryService.createSubscription(eventbuffer, subscription);

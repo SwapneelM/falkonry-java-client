@@ -19,9 +19,9 @@ import java.util.Observer;
 
 public class TestStreamOutput {
   Falkonry falkonry = null;
-  String host = "http://localhost:8080";
-  String token = "";    //auth token
-  String pipeline = "auvkkw8boml4l2";
+  String host = "https://dev.falkonry.io";
+  String token = "tqrm0aqb0y24vuzeybqp218h8evjaday";    //auth token
+  String pipeline = "jff0ktfdu3t38u";
 
   public class OutflowCallback implements javafx.util.Callback<String, String> {
     public String call (String result) {
@@ -40,7 +40,10 @@ public class TestStreamOutput {
 
     try {
       Long start = 123456l;
-      Object streamerUser = falkonry.streamOutput(pipeline, start, new OutflowCallback());
+      javafx.util.Callback<String, String> streamRunner= falkonry.streamOutput(pipeline, start, new OutflowCallback());
+      System.out.println("Calling pause : " + streamRunner.call("pause"));
+      System.out.println("Calling resume : " + streamRunner.call("resume"));
+      //wait();
     }
     catch (Exception e){
       System.out.println(e.toString()+"\nError in getting output");

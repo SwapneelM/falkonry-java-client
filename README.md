@@ -51,8 +51,8 @@ Data:
 
 Usage:
 ```java
-    import com.falkonry.client.Falkonry
-    import com.falkonry.schemas
+    import com.falkonry.client.Falkonry;
+    import com.falkonry.schemas;
 
     //instantiate Falkonry
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
@@ -93,8 +93,8 @@ Data:
 
 Usage:
 ```java
-    import com.falkonry.client.Falkonry
-    import com.falkonry.schemas
+    import com.falkonry.client.Falkonry;
+    import com.falkonry.schemas;
 
     //instantiate Falkonry
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
@@ -135,8 +135,8 @@ Data:
 
 Usage:
 ```java
-    import com.falkonry.client.Falkonry
-    import com.falkonry.schemas
+    import com.falkonry.client.Falkonry;
+    import com.falkonry.schemas;
 
     //instantiate Falkonry
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
@@ -170,8 +170,8 @@ Data:
 
 Usage:
 ```java
-    import com.falkonry.client.Falkonry
-    import com.falkonry.schemas
+    import com.falkonry.client.Falkonry;
+    import com.falkonry.schemas;
 
     //instantiate Falkonry
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
@@ -194,8 +194,8 @@ Usage:
 #### Get an Eventbuffer
 
 ```java
-    import com.falkonry.client.Falkonry
-    import com.falkonry.schemas
+    import com.falkonry.client.Falkonry;
+    import com.falkonry.schemas;
 
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
 
@@ -205,7 +205,7 @@ Usage:
 #### Add json data from a stream to an Eventbuffer
     
 ```java
-    import com.falkonry.client.Falkonry
+    import com.falkonry.client.Falkonry;
     import org.apache.commons.io.FileUtils;
 
     Falkonry falkonry   = new Falkonry("https://service.falkonry.io", "auth-token");
@@ -220,7 +220,7 @@ Usage:
 #### Add csv data from a stream to an Eventbuffer
     
 ```java
-    import com.falkonry.client.Falkonry
+    import com.falkonry.client.Falkonry;
     import org.apache.commons.io.FileUtils;
 
     Falkonry falkonry   = new Falkonry("https://service.falkonry.io", "auth-token");
@@ -235,8 +235,8 @@ Usage:
 #### Setup Pipeline from Eventbuffer
     
 ```java
-    import com.falkonry.client.Falkonry
-    import com.falkonry.schemas
+    import com.falkonry.client.Falkonry;
+    import com.falkonry.schemas;
 
     //instantiate Falkonry
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
@@ -304,8 +304,8 @@ Usage:
 #### To get all Pipelines
     
 ```java
-    import com.falkonry.client.Falkonry
-    import com.falkonry.schemas
+    import com.falkonry.client.Falkonry;
+    import com.falkonry.schemas;
 
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
 
@@ -315,7 +315,7 @@ Usage:
 #### Add verification data (json format) to a Pipeline
 
 ```java
-    import com.falkonry.client.Falkonry
+    import com.falkonry.client.Falkonry;
 
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
 
@@ -326,7 +326,7 @@ Usage:
 #### To add verification data (csv format) to a Pipeline
 
 ```java
-    import com.falkonry.client.Falkonry
+    import com.falkonry.client.Falkonry;
 
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
 
@@ -337,7 +337,7 @@ Usage:
 #### Add verification data (json format) from a stream to a Pipeline
     
 ```java
-    import com.falkonry.client.Falkonry
+    import com.falkonry.client.Falkonry;
     import org.apache.commons.io.FileUtils;
 
     Falkonry falkonry   = new Falkonry("https://service.falkonry.io", "auth-token");
@@ -349,7 +349,7 @@ Usage:
 #### Add verification data (csv format) from a stream to a Pipeline
     
 ```java
-    import com.falkonry.client.Falkonry
+    import com.falkonry.client.Falkonry;
     import org.apache.commons.io.FileUtils;
 
     Falkonry falkonry   = new Falkonry("https://service.falkonry.io", "auth-token");
@@ -361,7 +361,7 @@ Usage:
 #### Get output of a Pipeline
 
 ```java
-    import com.falkonry.client.Falkonry
+    import com.falkonry.client.Falkonry;
 
     Falkonry falkonry = new Falkonry("https://service.falkonry.io", "auth-token");
     OutputStream os   = new FileOutputStream("/tmp/sample.json");
@@ -374,8 +374,8 @@ Usage:
 #### To create and delete a subscription for an Eventbuffer
 
 ```java
-    import com.falkonry.client.Falkonry
-    import com.falkonry.schemas
+    import com.falkonry.client.Falkonry;
+    import com.falkonry.schemas;
 
     Subscription sub = new Subscription();
     sub.setType("MQTT")                        //subscription type
@@ -394,8 +394,8 @@ Usage:
 #### To create and delete a publication for a Pipeline
 
 ```java
-    import com.falkonry.client.Falkonry
-    import com.falkonry.schemas
+    import com.falkonry.client.Falkonry;
+    import com.falkonry.schemas;
 
     Publication publication = new Publication();
     publication.setType("MQTT")              //publication type
