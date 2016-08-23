@@ -76,10 +76,6 @@ public class Falkonry {
     return this.falkonryService.streamOutput(pipeline, start, obj);
   }
 
-  /*public void haltStreamOutput(String pipeline, Long start, Callback obj) throws Exception {
-    this.falkonryService.haltStreamOutput(pipeline, start, obj);
-  }*/
-
   public Subscription createSubscription(String eventbuffer, Subscription subscription) throws Exception {
     return falkonryService.createSubscription(eventbuffer, subscription);
   }

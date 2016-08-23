@@ -6,22 +6,23 @@ package com.falkonry.client.service;
  * MIT Licensed
  */
 
-import com.falkonry.helper.models.*;
-import javafx.util.Callback;
-import org.apache.commons.io.IOUtils;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
-import org.json.JSONArray;
-import org.json.JSONObject;
+        import com.falkonry.helper.models.*;
+        import javafx.util.Callback;
+        import org.apache.commons.io.IOUtils;
+        import org.codehaus.jackson.map.ObjectMapper;
+        import org.codehaus.jackson.type.TypeReference;
+        import org.json.JSONArray;
+        import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+        import java.io.BufferedReader;
+        import java.io.ByteArrayInputStream;
+        import java.io.InputStream;
+        import java.net.HttpURLConnection;
+        import java.nio.charset.Charset;
+        import java.util.ArrayList;
+        import java.util.HashMap;
+        import java.util.List;
+        import java.util.Map;
 
 public class FalkonryService {
   private HttpService httpService;
@@ -36,7 +37,7 @@ public class FalkonryService {
 
     eb.setName(eventbuffer.getName());
     if(eventbuffer.getThingIdentifier()!=null)
-    eb.setThingIdentifier(eventbuffer.getThingIdentifier());
+      eb.setThingIdentifier(eventbuffer.getThingIdentifier());
     if(eventbuffer.getTimeFormat()!=null)
       eb.setTimeFormat(eventbuffer.getTimeFormat());
     if(eventbuffer.getTimeIdentifier()!=null)
@@ -98,12 +99,12 @@ public class FalkonryService {
       assessmentRequestList.add(assessmentRequest);
     }
     pipelineRequest.setName(pipeline.getName())
-        .setThingIdentifier(pipeline.getThingIdentifier())
-        .setInterval(pipeline.getInterval())
-        .setEventbuffer(pipeline.getEventbuffer())
-        .setInputList(signalRequestList)
-        .setAssessmentList(assessmentRequestList)
-        .setThingName(pipeline.getThingName());
+            .setThingIdentifier(pipeline.getThingIdentifier())
+            .setInterval(pipeline.getInterval())
+            .setEventbuffer(pipeline.getEventbuffer())
+            .setInputList(signalRequestList)
+            .setAssessmentList(assessmentRequestList)
+            .setThingName(pipeline.getThingName());
     String pipeline_json = httpService.post("/pipeline", mapper.writeValueAsString(pipelineRequest));
     return mapper.readValue(pipeline_json, Pipeline.class);
   }
@@ -188,34 +189,32 @@ public class FalkonryService {
 
     public void run() {
       try {
+
         thisThread = Thread.currentThread();
         System.out.println();
         while (blinker == thisThread) {
+          try
+          {
+            synchronized (this) {
+              while (threadSuspended && blinker == thisThread)
+                this.wait();
+            }
+          } catch (Exception e) {}
           if (!awaitingResponse) {
-            System.out.println("Checking for new data . . . ");
             data = null;
             awaitingResponse = true;
-            data = outflowData(pipeline);
+            String url = "/pipeline/" + pipeline + "/output?startTime=" + start;
+            data = outflowData(url);
+            HttpURLConnection headers =  httpService.downstreamRequest(url);
+            start = Long.valueOf(headers.getHeaderField("X-Falkonry-Data-Offset"));
           }
           if (data != null) {
-            System.out.println("Found new data");
             String line = null;
             String message = new String();
-            final StringBuffer buffer = new StringBuffer(2048);
             while ((line = data.readLine()) != null) {
               message += line;
             }
-            System.out.println("Data : " + data);
             callback.call(message);
-          }
-          try {
-            Thread.sleep(4000);
-            synchronized (this) {
-              while (threadSuspended && blinker == thisThread)
-                wait();
-            }
-          } catch (InterruptedException e) {
-
           }
         }
       } catch (Exception e) {
@@ -225,24 +224,25 @@ public class FalkonryService {
 
     private void setBlinker (Thread t) {
       blinker = t;
-      System.out.println("Blinker updated to : " + blinker);
     }
 
-    public synchronized void suspendThread () {
+    public synchronized void  suspendThread (StreamingThread streamer){
       threadSuspended = !threadSuspended;
-    }
-
-    public synchronized void closeThread() {
-      blinker = null;
-      notify();
-    }
-
-    private BufferedReader outflowData (String pipeline) {
       try {
-        System.out.println("Checking if pipeline is open . . . ");
+        streamer.notify();
+      } catch (Exception e) {}
+    }
+
+    public synchronized void closeThread(StreamingThread streamer) {
+      blinker = null;
+      try {
+        streamer.notify();
+      } catch (Exception e) {}
+    }
+
+    private BufferedReader outflowData (String url) {
+      try {
         if(pipelineOpen()) {
-          System.out.println("Pipeline is open - Start : " + start);
-          String url = "/pipeline/" + pipeline + "/output?startTime=" + start;
           awaitingResponse = false;
           return httpService.downstream(url);
         } else {
@@ -263,8 +263,6 @@ public class FalkonryService {
         System.out.println("Error : " + e);
       }
       JSONObject outflowStatus = new JSONObject(pipeline_json);
-      System.out.println("Pipeline details : " + pipeline_json + "\n"
-              + "Outflow Status : " + outflowStatus.get("outflowStatus"));
       return (outflowStatus.get("outflowStatus").equals("OPEN"));
     }
 
@@ -294,13 +292,14 @@ public class FalkonryService {
 
     public synchronized String call (String tag) {
       if (tag.equals("resume")) {
-        streamer.suspendThread();
+        streamer.suspendThread(streamer);
         return "Resumed Thread";
       } else if (tag.equals("pause")) {
-        streamer.suspendThread();
+        streamer.suspendThread(streamer);
         return "Paused Thread";
-      } else if (streamingThread.isAlive() && tag.equals("close")) {
-        streamer.closeThread();
+      } else if (tag.equals("close")) {
+        streamer.closeThread(streamer);
+        return "Thread closed";
       }
       return "Invalid Operation. Use 'resume', 'pause' or 'close' for the Thread.";
     }
@@ -322,7 +321,7 @@ public class FalkonryService {
     try {
       initiator = new Initiator(pipeline, start, callback);
       Thread t = initiator.startThread();
-      Thread.sleep(12000);
+      Thread.sleep(5000);
       t.interrupt();
     } catch (Exception e) {
       System.out.println("Error instantiating streamingThread : " + e);
@@ -362,3 +361,4 @@ public class FalkonryService {
     httpService.delete("/pipeline/"+pipeline+"/publication/"+publication);
   }
 }
+

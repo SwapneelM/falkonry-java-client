@@ -18,7 +18,7 @@ import java.io.FileWriter;
 public class TestPipelineGetOutput {
   Falkonry falkonry = null;
   String host = "http://localhost:8080";
-  String token = "";
+  String token = "";           //auth token
   @Before
   public void setUp() throws Exception {
     falkonry = new Falkonry(host, token);
@@ -27,7 +27,7 @@ public class TestPipelineGetOutput {
   //@Test
   public void getOutput() throws Exception{
     try {
-      String pipeline = "zmusfprsf7zspf";
+      String pipeline = "";     //enter pipeline here
       BufferedReader br = falkonry.getOutput(pipeline, null, null);
       BufferedWriter bw = new BufferedWriter(new FileWriter("res/output.txt"));
       String data;

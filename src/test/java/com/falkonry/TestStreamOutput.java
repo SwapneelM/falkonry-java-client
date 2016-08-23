@@ -19,9 +19,9 @@ import java.util.Observer;
 
 public class TestStreamOutput {
   Falkonry falkonry = null;
-  String host = "https://dev.falkonry.io";
-  String token = "tqrm0aqb0y24vuzeybqp218h8evjaday";    //auth token
-  String pipeline = "jff0ktfdu3t38u";
+  String host = "http://localhost:8080";
+  String token = "";      //auth token
+  String pipeline = "";
 
   public class OutflowCallback implements javafx.util.Callback<String, String> {
     public String call (String result) {
@@ -41,10 +41,25 @@ public class TestStreamOutput {
     try {
       Long start = 123456l;
       javafx.util.Callback<String, String> streamRunner= falkonry.streamOutput(pipeline, start, new OutflowCallback());
-      System.out.println("Calling pause : " + streamRunner.call("pause"));
-      System.out.println("Calling resume : " + streamRunner.call("resume"));
-      //wait();
+      long now = System.currentTimeMillis();
+      long end = now + 2*1000;
+      while (System.currentTimeMillis() < end) {}
+      try {
+        System.out.println("Called pause : " + streamRunner.call("pause"));
+      } catch (Exception e) {}
+      now = System.currentTimeMillis();
+      end = now + 10*1000;
+      while (System.currentTimeMillis() < end) {}
+      System.out.println("Called resume : " + streamRunner.call("resume"));
+
+      now = System.currentTimeMillis();
+      end = now + 20*1000;
+      while (System.currentTimeMillis() < end) {}
+      try {
+        System.out.println("Called close : " + streamRunner.call("close"));
+      } catch (Exception e) {}
     }
+
     catch (Exception e){
       System.out.println(e.toString()+"\nError in getting output");
       Assert.assertEquals(0,1);

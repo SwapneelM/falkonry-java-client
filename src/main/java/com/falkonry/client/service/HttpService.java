@@ -303,25 +303,25 @@ public class HttpService {
 
   public HttpURLConnection downstreamRequest(String path) throws Exception {
     String url = this.host + path;
-    URL obj = new URL(url);
+      URL obj = new URL(url);
     HttpURLConnection con = (HttpURLConnection) obj.openConnection();
     con.setRequestMethod("GET");
-    con.setRequestProperty("User-Agent", this.user_agent);
+      con.setRequestProperty("Accept", "application/json");
+      con.setRequestProperty("Content-Type", "application/x-json-stream");
     con.setRequestProperty("Authorization", "Token "+this.token);
     int responseCode = con.getResponseCode();
     BufferedReader in = new BufferedReader(
             new InputStreamReader(con.getInputStream()));
-
+      in.close();
     if(responseCode == 401)
       throw new Exception("Unauthorized : Invalid token");
     else if(responseCode >= 400) {
-      String inputLine;
+
       StringBuffer response = new StringBuffer();
-      System.out.println(con.getHeaderField(2) + "\n" + con.getHeaderField(3));
-      while ((inputLine = in.readLine()) != null) {
-        response.append(inputLine);
-      }
-      in.close();
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
       throw new Exception(response.toString());
     }
     else

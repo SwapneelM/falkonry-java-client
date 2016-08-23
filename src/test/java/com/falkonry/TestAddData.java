@@ -15,7 +15,7 @@ import java.util.*;
 public class TestAddData {
     Falkonry falkonry = null;
     String host = "http://localhost:8080";
-    String token = "";
+    String token = "";      //auth token
     List<Eventbuffer> eventbuffers = new ArrayList<Eventbuffer>();
 
     @Before
