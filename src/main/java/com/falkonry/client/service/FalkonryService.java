@@ -177,14 +177,14 @@ public class FalkonryService {
     Boolean awaitingResponse = false;
     Thread blinker;
     Callback callback;
-    Boolean threadSuspended;
+    Boolean threadIsSuspended;
     Thread thisThread;
 
     private StreamingThread (String pipeline, Long start, Callback myCallback) throws Exception {
       this.pipeline = pipeline;
       this.start = start;
       this.callback = myCallback;
-      this.threadSuspended = false;
+      this.threadIsSuspended = false;
     }
 
     public void run() {
@@ -196,14 +196,13 @@ public class FalkonryService {
           try
           {
             synchronized (this) {
-              while (threadSuspended && blinker == thisThread)
+              while (threadIsSuspended && blinker == thisThread)
                 this.wait();
             }
           } catch (Exception e) {}
           if (!awaitingResponse) {
             data = null;
             awaitingResponse = true;
-            System.out.println("Start : " + start);
             String url = "/pipeline/" + pipeline + "/output?startTime=" + start;
             data = outflowData(url);
             HttpURLConnection headers =  httpService.downstreamRequest(url);
@@ -231,7 +230,7 @@ public class FalkonryService {
     }
 
     public synchronized void  suspendThread (StreamingThread streamer){
-      threadSuspended = !threadSuspended;
+      threadIsSuspended = !threadIsSuspended;
       try {
         streamer.notify();
       } catch (Exception e) {}
@@ -297,10 +296,16 @@ public class FalkonryService {
     }
 
     public String resume() {
-      return call("resume");
+      if(streamer.threadIsSuspended) {
+        return call("resume");
+      }
+      return "Thread already running";
     }
 
     public String pause () {
+      if(streamer.threadIsSuspended) {
+        return "Thread is already paused";
+      }
       return call("pause");
     }
 
@@ -334,12 +339,10 @@ public class FalkonryService {
 
   public FStream streamOutput(String pipeline, Long start, Callback callback) {
     String data;
-    //Boolean streaming = true;
     FStream fstream = null;
     try {
       fstream = new FStream(pipeline, start, callback);
       Thread t = fstream.startThread();
-      Thread.sleep(5000);
       t.interrupt();
     } catch (Exception e) {
       System.out.println("Error instantiating streamingThread : " + e);

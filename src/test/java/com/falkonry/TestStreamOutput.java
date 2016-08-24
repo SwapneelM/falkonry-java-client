@@ -20,14 +20,14 @@ import java.util.Observer;
 
 public class TestStreamOutput {
   Falkonry falkonry = null;
-  String host = "https://dev.falkonry.io";
-  String token = "avfgjmmrhhzsau5ohh1uzeri6mqvv7re";      //auth token
-  String pipeline = "epis8zwaygocjn";
+  String host = "http://localhost:8080";
+  String token = "";      //auth token
+  String pipeline = "";
 
   public class OutflowCallback implements javafx.util.Callback<String, String> {
-    public String call (String result) {
-      System.out.println("Callback Result :" + result + "\n");
-      return result;
+    public String call (String data) {
+      System.out.println("Data :" + data + "\n");
+      return data;
     }
   }
 
