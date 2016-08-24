@@ -203,10 +203,14 @@ public class FalkonryService {
           if (!awaitingResponse) {
             data = null;
             awaitingResponse = true;
+            System.out.println("Start : " + start);
             String url = "/pipeline/" + pipeline + "/output?startTime=" + start;
             data = outflowData(url);
             HttpURLConnection headers =  httpService.downstreamRequest(url);
-            start = Long.valueOf(headers.getHeaderField("X-Falkonry-Data-Offset"));
+            Long offset = Long.valueOf(headers.getHeaderField("X-Falkonry-Data-Offset"));
+            if(start < offset) {
+                start = offset;
+            }
           }
           if (data != null) {
             String line = null;
@@ -272,22 +276,36 @@ public class FalkonryService {
     }
   }
 
-  private class Initiator implements Callback<String, String> {
+  public class FStream implements Callback<String, String> {
     StreamingThread streamer;
     Thread streamingThread = null;
 
-    private Initiator (String pipeline, Long start, Callback callback) {
+    private FStream (String pipeline, Long start, Callback callback) {
       try {
         if(streamingThread == null) {
           streamer = new StreamingThread(pipeline, start, callback);
           streamingThread = new Thread(streamer);
           streamer.setBlinker(streamingThread);
         } else {
-          streamingThread.interrupt();
+          try{
+            streamingThread.interrupt();
+          } catch (Exception e) {}
         }
       } catch (Exception e) {
         System.out.println("Exception creating thread : " + e);
       }
+    }
+
+    public String resume() {
+      return call("resume");
+    }
+
+    public String pause () {
+      return call("pause");
+    }
+
+    public String close() {
+      return call("close");
     }
 
     public synchronized String call (String tag) {
@@ -314,19 +332,19 @@ public class FalkonryService {
     }
   }
 
-  public Callback<String, String> streamOutput(String pipeline, Long start, Callback callback) {
+  public FStream streamOutput(String pipeline, Long start, Callback callback) {
     String data;
-    Boolean streaming = true;
-    Initiator initiator = null;
+    //Boolean streaming = true;
+    FStream fstream = null;
     try {
-      initiator = new Initiator(pipeline, start, callback);
-      Thread t = initiator.startThread();
+      fstream = new FStream(pipeline, start, callback);
+      Thread t = fstream.startThread();
       Thread.sleep(5000);
       t.interrupt();
     } catch (Exception e) {
       System.out.println("Error instantiating streamingThread : " + e);
     }
-    return initiator;
+    return fstream;
   }
 
   public Subscription createSubscription(String eventbuffer, Subscription subscription) throws Exception {

@@ -72,7 +72,7 @@ public class Falkonry {
     return this.falkonryService.getOutput(pipeline, start, end);
   }
 
-  public Callback streamOutput(String pipeline, Long start, Callback obj) throws Exception {
+  public FalkonryService.FStream streamOutput(String pipeline, Long start, Callback obj) throws Exception {
     return this.falkonryService.streamOutput(pipeline, start, obj);
   }
 
